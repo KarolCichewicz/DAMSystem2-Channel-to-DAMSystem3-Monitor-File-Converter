@@ -16,92 +16,87 @@ ui <- fluidPage(
   tags$head(includeScript("google-analytics.js")),
   
   
-  
+  fluidPage(
   fluidRow(column(12,
                   
                   tags$h1("DAMSystem2-Channel to DAMSystem3-Monitor File Converter", align = "center"),
                   tags$h4("ShinyR-DAM accepts only DAMSystem3 Monitor files. This converter provides backwards compatibility for users still using the old DAMSystem2 data acquisition software", align = "center"),
                   tags$h4("Karol Cichewicz, Jay Hirsh laboratory, University of Virginia, Charlottesville, VA", align = "center")             
           
-                  )),
+                  ))),
   
   
-  sidebarPanel(
+  sidebarPanel(width = 3,
     
     
-  fluidRow(column(6,
+  fluidRow(
+    
     fileInput('file1', 'Upload 32 Channel files', multiple = TRUE,
             accept=c('text/csv', 
                      'text/comma-separated-values,text/plain', 
-                     '.csv'))
-    ),
-    column(4,
-           tags$br(),
-                  tags$head(
-                    tags$style(HTML('#refresh_1{background-color:#67EB5E}'))
-                  ),     
-                  actionButton("refresh_1", "Start file conversion")
-           
-           ),
-    column(4, "")
-    
-    
-    ),
+                     '.csv'))),
   
-  fluidRow(column(12,
-  textInput("Monitor_name", "Name your Monitor file", value = "Monitor_", width = NULL, placeholder = NULL))),
+  
+  fluidRow(
+  textInput("Monitor_name", "Name your Monitor file", value = "Monitor_", width = NULL, placeholder = NULL)),
   
   tags$br(),
-  tags$br(),
+  
+  
+  fluidRow(align='center',
+    tags$head(
+      tags$style(HTML('#refresh_1{background-color:#67EB5E}')),
+      tags$style(HTML('#refresh_1{font-size: 20px}'))
+    ),     
+    actionButton("refresh_1", "Start File Conversion"),
+    
+    tags$br(),
+    tags$br()
+  ),
+  
   
   tags$h4(strong("Reorder channel files if necessary")),
   
-  fluidRow(column(12,
-                  uiOutput("Order_channels")            
+  fluidRow(
+            uiOutput("Order_channels")            
                   
-                  ))
+                  )
   ),
   
   
-  fluidPage(
-    
-    tags$br(),
-    tags$br(),
-    
-    column(8,
-           tags$head(
-             tags$style(HTML('#download_Monitor_file{font-size: 30px}')),
-             tags$style(HTML('#download_Monitor_file{color:#1DB53B}'))
-           ),     
-           
-           downloadLink("download_Monitor_file", "Download Monitor file.txt")   
-    ),
-    
-    
-  column(8,
+  mainPanel(width = 9,
+     
+  fluidRow(
     tags$br(),     
-    tags$h3(" The first few rows of a Monitor file:")              
+    tags$h3(" The first six rows of a Monitor file will display when the conversion is complete")              
   ),
   
-  column(8,
-         fluidRow(
+  
+fluidRow(
   tableOutput('Monitor_file')
-  )),
+  ),
+  
+  fluidRow(
+         tags$head(
+           tags$style(HTML('#download_Monitor_file{font-size: 25px}')),
+           tags$style(HTML('#download_Monitor_file{background-color:#FCE897}'))
+         ),     
+         downloadButton("download_Monitor_file", "Download Monitor file.txt")   
+  ),
   
 
   
-  column(8,
+  fluidRow(
          tags$h3("Handling status codes"),
          tags$h5("Status codes from the first channel are used for the whole monitor."),
          tags$h5("Please keep that in mind if you decide to combine channel files from multiple monitors.")
          ),
-  column(8,
+  
+  fluidRow(
          h3('Contact information:'),
          tags$div(
            tags$p('Karol Cichewicz - kc3fb@virginia.edu, Jay Hirsh - jh6u@virginia.edu.'), 
            style = "font-size: 19px")
-         
-         
          )
   
   )
@@ -219,9 +214,7 @@ server <- function(input, output) {
                         Counts=as.numeric(paste(count_data)), Status_codes
       )
       
-      #colnames(d_1) <- NULL
-      
-      print(d_1)
+      d_1
       
     }
 })
@@ -279,8 +272,6 @@ server <- function(input, output) {
   })
     
   
-  
-  
   output$Order_channels <- renderUI({
     channel_files <- input$file1
     lapply(setdiff(1:length(channel_files$name), 0), function(i) {
@@ -293,7 +284,7 @@ server <- function(input, output) {
 
     
     filename = function() {
-      paste(input$Monitor_name,"_" , Sys.Date(),  ".txt", sep="")
+      paste(input$Monitor_name,"_" , ".txt", sep="")
     },
     content = function(file) {
       write.table(monitor_data_3(), file, sep="\t")
@@ -302,10 +293,11 @@ server <- function(input, output) {
   
   
   
-  output$Monitor_file <- renderTable({
+  output$Monitor_file <- renderTable(digits = 0, spacing = "xs",
+              {
     
-    All_inp <<- All_inputs()
-    Chan_des <<- Channel_desired_order()
+    #All_inp <<- All_inputs()
+    #Chan_des <<- Channel_desired_order()
     
     if (is.null(input$file1))
       return(NULL)
@@ -317,22 +309,15 @@ server <- function(input, output) {
     withProgress(message = 'Rendering monitor file table', {
       incProgress(1, detail = paste("In progress"))
       
-    p <- monitor_data_2()
-    colnames(p) <- NULL
+    p <- as.data.frame(monitor_data_3(),sep="\t") 
+    
     head(p)
     
     })
-      
-      
   
   })
     
-    
   })
-  
-  
-  
-  
  
 }
 
